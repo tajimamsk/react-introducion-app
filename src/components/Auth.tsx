@@ -1,7 +1,6 @@
 import React, { ChangeEvent, useState } from 'react';
 import styles from "./Auth.module.css"
 import { useDispatch } from "react-redux";
-// import { updateUserProfile } from "../features/userSlice";
 import { auth, provider, storage } from "../firebase";
 
 import {
@@ -23,6 +22,7 @@ import CameraIcon from "@material-ui/icons/Camera";
 import EmailIcon from "@material-ui/icons/Email";
 import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
 import AccountCircleIcon from "@material-ui/icons/AccountCircle";
+import { updateUserProfile } from '../features/userSlice';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -58,16 +58,49 @@ const useStyles = makeStyles((theme) => ({
 
 const Auth:React.FC = () => {
   const classes = useStyles();
+  const dispatch = useDispatch()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [userName, setUserName] = useState("")
+  const [avatarImage, setAvatarImage] = useState<File | null>(null)
   const [isLogin, setIsLogin] = useState(true)
+  const onChangeImageHandler = (e: ChangeEvent<HTMLInputElement>) => {
+    // ！について　nullまたはundefinedではないと示す
+    if (e.target.files![0]) {
+      setAvatarImage(e.target.files![0])
+      // 初期化
+      e.target.value=""
+    }
+  }
 
   // mail&pass
   const signInEmail = async () => {
     await auth.signInWithEmailAndPassword(email, password)
   }
   const signUpEmail = async () => {
-    await auth.createUserWithEmailAndPassword(email, password)
+    const authUser = await auth.createUserWithEmailAndPassword(email, password)
+    let url = ""
+    // ランダムなfileNameを作る
+    if (avatarImage){
+      const S =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      const N = 16;
+      const randomChar = Array.from(crypto.getRandomValues(new Uint32Array(N))).map((n) => S[n%S.length]).join("")
+      const fileName = randomChar + "_" + avatarImage.name
+      await storage.ref(`avatars/${fileName}`).put(avatarImage)
+      url = await storage.ref("avatar").child(fileName).getDownloadURL()
+    }
+    // 名前とurlの更新
+    await authUser.user?.updateProfile({
+      displayName: userName,
+      photoURL: url
+    })
+    dispatch(
+      updateUserProfile({
+        displayName: userName,
+        photoUrl: url,
+      })
+    )
   }
   // google 
   const signInGoogle = async () => {
@@ -152,7 +185,7 @@ const Auth:React.FC = () => {
               <Grid item xs>
                 <span className={styles.login_reset}>Forgot password</span>
               </Grid>
-              <Grid item xs>
+              <Grid item>
                 <span className={styles.login_toggleMode} onClick={() => {setIsLogin(!isLogin)}}>
                   {isLogin ? "Create new account?" : "Back to login"}
                 </span>
@@ -173,4 +206,3 @@ const Auth:React.FC = () => {
     </Grid>
   );
 }
-export default Auth;
