@@ -24,6 +24,17 @@ import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
 import AccountCircleIcon from "@material-ui/icons/AccountCircle";
 import { updateUserProfile } from "../features/userSlice";
 
+function getModalStyle() {
+  const top = 50;
+  const left = 50;
+
+  return {
+    top: `${top}%`,
+    left: `${left}%`,
+    transform: `translate(-${top}%, -${left}%)`,
+  };
+}
+
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100vh",
@@ -56,6 +67,15 @@ const useStyles = makeStyles((theme) => ({
   submit: {
     margin: theme.spacing(3, 0, 2),
   },
+  modal: {
+    outline: "none",
+    position: "absolute",
+    width: 400,
+    borderRadius: 10,
+    backgroundColor: "white",
+    boxShadow: theme.shadows[5],
+    padding: theme.spacing(10),
+  },
 }));
 
 const Auth: React.FC = () => {
@@ -66,6 +86,23 @@ const Auth: React.FC = () => {
   const [username, setUsername] = useState("");
   const [avatarImage, setAvatarImage] = useState<File | null>(null);
   const [isLogin, setIsLogin] = useState(true);
+  const [openModal, setOpenModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+
+  // パスワードリセットmodal
+  const sendResetEmail = async (e: React.MouseEvent<HTMLElement>) => {
+    await auth
+      .sendPasswordResetEmail(resetEmail)
+      .then(() => {
+        setOpenModal(false);
+        setResetEmail("");
+      })
+      .catch((err) => {
+        alert(err.message);
+        setResetEmail("");
+      });
+  };
+
   const onChangeImageHandler = (e: ChangeEvent<HTMLInputElement>) => {
     // ！について　nullまたはundefinedではないと示す
     if (e.target.files![0]) {
@@ -75,7 +112,7 @@ const Auth: React.FC = () => {
     }
   };
 
-  // mail&pass
+  // mail&pass認証
   const signInEmail = async () => {
     await auth.signInWithEmailAndPassword(email, password);
   };
@@ -107,10 +144,12 @@ const Auth: React.FC = () => {
       })
     );
   };
-  // google
+
+  // google認証
   const signInGoogle = async () => {
     await auth.signInWithPopup(provider).catch((err) => alert(err.message));
   };
+
   return (
     <Grid container component="main" className={classes.root}>
       <CssBaseline />
@@ -229,7 +268,12 @@ const Auth: React.FC = () => {
             </Button>
             <Grid container>
               <Grid item xs>
-                <span className={styles.login_reset}>Forgot password</span>
+                <span
+                  className={styles.login_reset}
+                  onClick={() => setOpenModal(true)}
+                >
+                  Forgot password
+                </span>
               </Grid>
               <Grid item>
                 <span
@@ -246,12 +290,34 @@ const Auth: React.FC = () => {
               fullWidth
               variant="contained"
               color="primary"
+              startIcon={<CameraIcon />}
               className={classes.submit}
               onClick={signInGoogle}
             >
               SignIn with Google
             </Button>
           </form>
+          <Modal open={openModal} onClose={() => setOpenModal(false)}>
+            <div style={getModalStyle()} className={classes.modal}>
+              <div className={styles.login_modal}>
+                <TextField
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  type="email"
+                  name="name"
+                  label="Reset E-mail"
+                  value={resetEmail}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setResetEmail(e.target.value);
+                  }}
+                />
+                <IconButton onClick={sendResetEmail}>
+                  <SendIcon />
+                </IconButton>
+              </div>
+            </div>
+          </Modal>
         </div>
       </Grid>
     </Grid>
