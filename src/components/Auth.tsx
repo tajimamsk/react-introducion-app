@@ -63,7 +63,7 @@ const Auth: React.FC = () => {
   const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userName, setUserName] = useState("");
+  const [username, setUsername] = useState("");
   const [avatarImage, setAvatarImage] = useState<File | null>(null);
   const [isLogin, setIsLogin] = useState(true);
   const onChangeImageHandler = (e: ChangeEvent<HTMLInputElement>) => {
@@ -92,16 +92,17 @@ const Auth: React.FC = () => {
         .join("");
       const fileName = randomChar + "_" + avatarImage.name;
       await storage.ref(`avatars/${fileName}`).put(avatarImage);
-      url = await storage.ref("avatar").child(fileName).getDownloadURL();
+      url = await storage.ref("avatars").child(fileName).getDownloadURL();
     }
+    console.log("url: " + url);
     // 名前とurlの更新
     await authUser.user?.updateProfile({
-      displayName: userName,
+      displayName: username,
       photoURL: url,
     });
     dispatch(
       updateUserProfile({
-        displayName: userName,
+        displayName: username,
         photoUrl: url,
       })
     );
@@ -110,7 +111,6 @@ const Auth: React.FC = () => {
   const signInGoogle = async () => {
     await auth.signInWithPopup(provider).catch((err) => alert(err.message));
   };
-
   return (
     <Grid container component="main" className={classes.root}>
       <CssBaseline />
@@ -121,9 +121,49 @@ const Auth: React.FC = () => {
             <LockOutlinedIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
-            {isLogin ? "Login" : "Registered"}
+            {isLogin ? "Login" : "Register"}
           </Typography>
           <form className={classes.form} noValidate>
+            {!isLogin && (
+              <>
+                <TextField
+                  variant="outlined"
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="username"
+                  label="Username"
+                  name="username"
+                  autoComplete="username"
+                  autoFocus
+                  value={username}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    setUsername(e.target.value);
+                  }}
+                />
+                <Grid container direction="column" alignItems="center">
+                  <Box>
+                    <IconButton>
+                      <label>
+                        <AccountCircleIcon
+                          fontSize="large"
+                          className={
+                            avatarImage
+                              ? styles.login_addIconLoaded
+                              : styles.login_addIcon
+                          }
+                        />
+                        <input
+                          className={styles.login_hiddenIcon}
+                          type="file"
+                          onChange={onChangeImageHandler}
+                        />
+                      </label>
+                    </IconButton>
+                  </Box>
+                </Grid>
+              </>
+            )}
             <TextField
               variant="outlined"
               margin="normal"
@@ -155,6 +195,13 @@ const Auth: React.FC = () => {
               }}
             />
             <Button
+              disabled={
+                // 否定演算子　!emailはemailがfalsyであるときにtrueを返す
+                // falsyな値　ex) false,0,"",null,undefined,NaN
+                isLogin
+                  ? !email || password.length < 6
+                  : !username || !email || password.length < 6 || !avatarImage
+              }
               fullWidth
               variant="contained"
               color="primary"
@@ -178,7 +225,7 @@ const Auth: React.FC = () => {
                     }
               }
             >
-              {isLogin ? "Login" : "Registered"}
+              {isLogin ? "Login" : "Register"}
             </Button>
             <Grid container>
               <Grid item xs>
