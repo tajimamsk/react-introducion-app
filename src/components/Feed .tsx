@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
 import TweetInput from "./TweetInput";
 import styles from "./Feed.module.css";
+import Post from "./Post";
 
 const Feed: React.FC = () => {
   const [posts, setPosts] = useState([
@@ -19,9 +20,9 @@ const Feed: React.FC = () => {
   useEffect(() => {
     const unSub = db
       .collection("posts")
-      .orderBy("timeStamp", "desc")
+      .orderBy("timestamp", "desc")
       .onSnapshot((snapshot) => {
-        console.log(snapshot.docs);
+        // console.log(snapshot.docs);
         setPosts(
           snapshot.docs.map((doc) => ({
             id: doc.id,
@@ -42,9 +43,22 @@ const Feed: React.FC = () => {
   return (
     <div className={styles.feed}>
       <TweetInput />
-      {posts.map((post) => (
-        <h3 key={post.id}>{post.id}</h3>
-      ))}
+      {/* 投稿０の時のレンダリングを防ぐ */}
+      {posts[0]?.id && (
+        <>
+          {posts.map((post) => (
+            <Post
+              key={post.id}
+              postId={post.id}
+              avatar={post.avatar}
+              image={post.image}
+              text={post.text}
+              timestamp={post.timestamp}
+              username={post.username}
+            />
+          ))}
+        </>
+      )}
     </div>
   );
 };

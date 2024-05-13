@@ -6,7 +6,6 @@ import { auth, storage, db } from "../firebase";
 import { Avatar, Button, IconButton } from "@material-ui/core";
 import AddPhotoIcon from "@material-ui/icons/AddAPhoto";
 import firebae from "firebase/app";
-import { timeStamp } from "console";
 
 const TweetInput: React.FC = () => {
   const user = useSelector(selectUser);
@@ -48,7 +47,7 @@ const TweetInput: React.FC = () => {
                 avatar: user.photoUrl,
                 image: url,
                 text: tweetMsg,
-                timeStamp: firebae.firestore.FieldValue.serverTimestamp(),
+                timestamp: firebae.firestore.FieldValue.serverTimestamp(),
                 username: user.displayName,
               });
             });
@@ -59,7 +58,7 @@ const TweetInput: React.FC = () => {
         avatar: user.photoUrl,
         image: "",
         text: tweetMsg,
-        timeStamp: firebae.firestore.FieldValue.serverTimestamp(),
+        timestamp: firebae.firestore.FieldValue.serverTimestamp(),
         username: user.displayName,
       });
     }
